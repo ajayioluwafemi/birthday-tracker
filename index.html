@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Birthday & Anniversary Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>🎂 Birthday & Anniversary Tracker</h1>
+    <p>Powered by your Google Form responses</p>
+  </header>
+
+  <main>
+    <!-- Stats row -->
+    <div class="stats" id="stats"></div>
+
+    <!-- Filter buttons -->
+    <div class="filters">
+      <input type="text" id="search" placeholder="🔍 Search name..." oninput="renderCards()" />
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('birthday', this)">🎂 Birthdays</button>
+      <button class="filter-btn" onclick="setFilter('anniversary', this)">💍 Anniversaries</button>
+      <button class="filter-btn" onclick="setFilter('soon', this)">⚡ This Month</button>
+    </div>
+
+    <!-- Cards -->
+    <div id="cards-container"></div>
+
+    <!-- Last updated -->
+    <p class="last-updated" id="last-updated"></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
