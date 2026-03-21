@@ -196,10 +196,8 @@ function renderDashboard() {
     var c   = avatarColour(e.name);
     var emo = e.type==="birthday" ? "🎂" : "💍";
     var sub = e.type==="birthday"
-      ? emo + " Birthday"
-      : emo + " Anniversary · " + e.years + " year" + (e.years!==1?"s":"");
-    var extra = [e.gender, e.location].filter(Boolean).join(" · ");
-    if (extra) sub += " · " + extra;
+      ? emo + " Birthday · " + e.gender + (e.location ? " · " + e.location : "")
+      : emo + " Anniversary · " + (e.location ? e.location : "");
     var bc = e.days===0 ? "today" : e.days<=7 ? "soon" : "normal";
     var bt = e.days===0 ? "🎉 Today!" : "in "+e.days+" day"+(e.days!==1?"s":"");
     return '<div class="card '+(e.days===0?"today":e.days<=7?"soon":"")+'">' +
