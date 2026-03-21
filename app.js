@@ -1,180 +1,250 @@
-// ⬇️  PASTE YOUR GOOGLE APPS SCRIPT URL HERE  ⬇️
-const API_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+var API_URL = "https://script.google.com/macros/s/AKfycbx4hMRRKoybFc5jVXoKENX0lwph1Yyj98m27wFmUk-LnnH0EENTxyECB25gFxTR-iBqcA/exec";
 
-// How often to refresh data (in milliseconds). 60000 = every 1 minute
-const REFRESH_INTERVAL = 60000;
+var REFRESH_EVERY = 60000;
+var allPeople = [];
+var activeFilter = "all";
+var calendarDate = new Date();
 
-let allPeople = [];
-let activeFilter = 'all';
-
-// ── Fetch data from Google Sheet ──
-async function fetchData() {
-  try {
-    const response = await fetch(API_URL);
-    const rows = await response.json();
-
-    allPeople = rows
-      .map(row => {
-        // These names must match your Google Form column headers exactly!
-        const name        = row["Full Name"] || row["full name"] || "";
-        const dobRaw      = row["Date of Birth"] || row["date of birth"] || "";
-        const anniversaryRaw = row["Anniversary Date"] || row["anniversary date"] || "";
-        const email       = row["Email Address"] || row["email address"] || "";
-        const relationship = row["What is your relationship to the group?"] || row["Relationship"] || "";
-
-        if (!name.trim()) return null;
-
-        return {
-          name: name.trim(),
-          dob: dobRaw ? new Date(dobRaw) : null,
-          anniversary: anniversaryRaw ? new Date(anniversaryRaw) : null,
-          email: email.trim(),
-          relationship: relationship.trim(),
-        };
-      })
-      .filter(Boolean); // remove empty rows
-
-    renderAll();
-    document.getElementById("last-updated").textContent =
-      "Last updated: " + new Date().toLocaleTimeString();
-
-  } catch (err) {
-    document.getElementById("cards-container").innerHTML =
-      `<div class="empty">⚠️ Could not load data. Check your API URL in app.js.</div>`;
-    console.error(err);
-  }
+var COLOURS = ["#7c3aed","#db2777","#2563eb","#16a34a","#ea580c","#0891b2"];
+function avatarColour(name) { return COLOURS[name.charCodeAt(0) % COLOURS.length]; }
+function initials(name) {
+  return name.split(" ").filter(Boolean).slice(0,2).map(function(w){ return w[0]; }).join("").toUpperCase();
 }
 
-// ── Work out how many days until next birthday/anniversary ──
+function fetchFromSheet() {
+  fetch(API_URL + "?t=" + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(json){
+      var rows = json.data || [];
+      allPeople = allPeople.filter(function(p){ return p.source === "manual"; });
+      rows.forEach(function(row){
+        var name  = row["Full Name"] || row["full name"] || "";
+        var dob   = row["Date of Birth"] || row["date of birth"] || "";
+        var anniv = row["Anniversary Date"] || row["anniversary date"] || "";
+        var email = row["Email Address"] || row["email address"] || "";
+        var rel   = row["Relationship"] || row["What is your relationship to the group?"] || "";
+        if (!name.trim()) return;
+        allPeople.push({
+          id: Date.now() + Math.random(),
+          name: name.trim(),
+          email: email.trim(),
+          dob: dob ? new Date(dob) : null,
+          anniversary: anniv ? new Date(anniv) : null,
+          relationship: rel.trim(),
+          notes: "",
+          source: "sheet"
+        });
+      });
+      renderAll();
+      document.getElementById("last-updated").textContent = "Last updated: " + new Date().toLocaleTimeString();
+    })
+    .catch(function(err){
+      document.getElementById("last-updated").textContent = "Could not connect to Google Sheet";
+      document.getElementById("event-list").innerHTML = '<div class="empty">⚠️ Could not load data. Check your API URL in app.js.</div>';
+      console.error(err);
+    });
+}
+
+function addPerson() {
+  var name  = document.getElementById("add-name").value.trim();
+  var dob   = document.getElementById("add-dob").value;
+  var anniv = document.getElementById("add-anniv").value;
+  if (!name) { alert("Please enter a name."); return; }
+  if (!dob && !anniv) { alert("Please add at least a date of birth or anniversary date."); return; }
+  allPeople.push({
+    id: Date.now(),
+    name: name,
+    email: document.getElementById("add-email").value.trim(),
+    dob: dob ? new Date(dob) : null,
+    anniversary: anniv ? new Date(anniv) : null,
+    relationship: document.getElementById("add-rel").value,
+    notes: document.getElementById("add-notes").value.trim(),
+    source: "manual"
+  });
+  ["add-name","add-email","add-dob","add-anniv","add-notes"].forEach(function(id){ document.getElementById(id).value = ""; });
+  document.getElementById("add-rel").value = "";
+  renderAll();
+  showTab("dashboard", document.querySelectorAll(".tab")[0]);
+  alert(name + " added! ✅");
+}
+
 function daysUntil(date) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const next = new Date(date);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var next = new Date(date);
   next.setFullYear(today.getFullYear());
   if (next < today) next.setFullYear(today.getFullYear() + 1);
-  return Math.round((next - today) / (1000 * 60 * 60 * 24));
+  return Math.round((next - today) / (1000*60*60*24));
 }
 
-// ── Build event list from people ──
 function getEvents() {
-  const events = [];
-  allPeople.forEach(person => {
-    if (person.dob) {
-      const days = daysUntil(person.dob);
-      const age = new Date().getFullYear() - person.dob.getFullYear() + (days === 0 ? 0 : 1);
-      events.push({ ...person, type: "birthday", days, age });
+  var today = new Date();
+  var events = [];
+  allPeople.forEach(function(p){
+    if (p.dob) {
+      var days = daysUntil(p.dob);
+      var age = today.getFullYear() - p.dob.getFullYear() + (days === 0 ? 0 : 1);
+      events.push(Object.assign({}, p, { type:"birthday", days:days, age:age }));
     }
-    if (person.anniversary) {
-      const days = daysUntil(person.anniversary);
-      const years = new Date().getFullYear() - person.anniversary.getFullYear() + (days === 0 ? 0 : 1);
-      events.push({ ...person, type: "anniversary", days, years });
+    if (p.anniversary) {
+      var days = daysUntil(p.anniversary);
+      var years = today.getFullYear() - p.anniversary.getFullYear() + (days === 0 ? 0 : 1);
+      events.push(Object.assign({}, p, { type:"anniversary", days:days, years:years }));
     }
   });
-  return events.sort((a, b) => a.days - b.days);
+  return events.sort(function(a,b){ return a.days - b.days; });
 }
 
-// ── Render stats row ──
 function renderStats() {
-  const events = getEvents();
-  const today = new Date();
-  const thisMonth = today.getMonth();
-  const todayCount = events.filter(e => e.days === 0).length;
-  const monthCount = events.filter(e => {
-    const d = new Date(e.type === "birthday" ? e.dob : e.anniversary);
-    d.setFullYear(today.getFullYear());
+  var events = getEvents();
+  var thisMonth = new Date().getMonth();
+  var todayCount = events.filter(function(e){ return e.days === 0; }).length;
+  var monthCount = events.filter(function(e){
+    var d = new Date(e.type==="birthday" ? e.dob : e.anniversary);
+    d.setFullYear(new Date().getFullYear());
     return d.getMonth() === thisMonth;
   }).length;
-
-  document.getElementById("stats").innerHTML = `
-    <div class="stat-card"><div class="num">${allPeople.length}</div><div class="label">People</div></div>
-    <div class="stat-card"><div class="num" style="color:#2563eb">${events.filter(e=>e.type==="birthday").length}</div><div class="label">Birthdays</div></div>
-    <div class="stat-card"><div class="num" style="color:#db2777">${events.filter(e=>e.type==="anniversary").length}</div><div class="label">Anniversaries</div></div>
-    <div class="stat-card"><div class="num" style="color:#16a34a">${monthCount}</div><div class="label">This Month</div></div>
-    ${todayCount > 0 ? `<div class="stat-card" style="border:2px solid #f59e0b"><div class="num" style="color:#f59e0b">${todayCount}</div><div class="label">Today! 🎉</div></div>` : ""}
-  `;
+  document.getElementById("stats").innerHTML =
+    '<div class="stat"><div class="num" style="color:#7c3aed">' + allPeople.length + '</div><div class="lbl">People</div></div>' +
+    '<div class="stat"><div class="num" style="color:#2563eb">' + events.filter(function(e){return e.type==="birthday";}).length + '</div><div class="lbl">Birthdays</div></div>' +
+    '<div class="stat"><div class="num" style="color:#db2777">' + events.filter(function(e){return e.type==="anniversary";}).length + '</div><div class="lbl">Anniversaries</div></div>' +
+    '<div class="stat"><div class="num" style="color:#16a34a">' + monthCount + '</div><div class="lbl">This Month</div></div>' +
+    (todayCount > 0 ? '<div class="stat" style="border:2px solid #f59e0b"><div class="num" style="color:#f59e0b">' + todayCount + '</div><div class="lbl">Today! 🎉</div></div>' : "");
 }
 
-// ── Render cards ──
-function renderCards() {
-  const search = document.getElementById("search").value.toLowerCase();
-  let events = getEvents();
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll(".filter").forEach(function(b){ b.classList.remove("active"); });
+  el.classList.add("active");
+  renderDashboard();
+}
 
-  if (activeFilter === "birthday")    events = events.filter(e => e.type === "birthday");
-  if (activeFilter === "anniversary") events = events.filter(e => e.type === "anniversary");
-  if (activeFilter === "soon") {
-    const m = new Date().getMonth();
-    events = events.filter(e => {
-      const d = new Date(e.type === "birthday" ? e.dob : e.anniversary);
+function renderDashboard() {
+  var search = document.getElementById("search").value.toLowerCase();
+  var events = getEvents();
+  if (activeFilter === "birthday")    events = events.filter(function(e){ return e.type==="birthday"; });
+  if (activeFilter === "anniversary") events = events.filter(function(e){ return e.type==="anniversary"; });
+  if (activeFilter === "month") {
+    var m = new Date().getMonth();
+    events = events.filter(function(e){
+      var d = new Date(e.type==="birthday" ? e.dob : e.anniversary);
       d.setFullYear(new Date().getFullYear());
       return d.getMonth() === m;
     });
   }
-  if (search) events = events.filter(e => e.name.toLowerCase().includes(search));
+  if (search) events = events.filter(function(e){ return e.name.toLowerCase().includes(search); });
 
-  const container = document.getElementById("cards-container");
-  if (!events.length) {
-    container.innerHTML = `<div class="empty">No events found.</div>`;
-    return;
-  }
+  var el = document.getElementById("event-list");
+  if (!events.length) { el.innerHTML = '<div class="empty">No events found.</div>'; return; }
 
-  const groups = { today: [], week: [], month: [], later: [] };
-  events.forEach(e => {
-    if (e.days === 0)       groups.today.push(e);
-    else if (e.days <= 7)   groups.week.push(e);
-    else if (e.days <= 30)  groups.month.push(e);
-    else                    groups.later.push(e);
+  var groups = { today:[], week:[], month:[], later:[] };
+  events.forEach(function(e){
+    if      (e.days === 0) groups.today.push(e);
+    else if (e.days <= 7)  groups.week.push(e);
+    else if (e.days <= 30) groups.month.push(e);
+    else                   groups.later.push(e);
   });
 
-  const colors = ["#7c3aed","#2563eb","#db2777","#16a34a","#ea580c","#0891b2"];
-
-  function makeCard(e) {
-    const initials = e.name.split(" ").map(w => w[0] || "").slice(0,2).join("").toUpperCase();
-    const color = colors[e.name.charCodeAt(0) % colors.length];
-    const badge = e.days === 0
-      ? `<span class="badge today-b">🎉 Today!</span>`
-      : e.days <= 7
-      ? `<span class="badge soon-b">in ${e.days} days</span>`
-      : `<span class="badge normal-b">in ${e.days} days</span>`;
-    const icon = e.type === "birthday" ? "🎂" : "💍";
-    const detail = e.type === "birthday"
-      ? `${icon} Birthday · turning ${e.age}`
-      : `${icon} Anniversary · ${e.years} year${e.years > 1 ? "s" : ""}`;
-
-    return `
-      <div class="card ${e.days === 0 ? "today" : e.days <= 7 ? "soon" : ""}">
-        <div class="avatar" style="background:${color}22; color:${color}">${initials}</div>
-        <div class="info">
-          <div class="name">${e.name} ${e.relationship ? `<span style="font-weight:400;color:#9ca3af;font-size:0.8rem">· ${e.relationship}</span>` : ""}</div>
-          <div class="sub">${detail}</div>
-        </div>
-        ${badge}
-      </div>`;
+  function card(e) {
+    var c = avatarColour(e.name);
+    var emo = e.type==="birthday" ? "🎂" : "💍";
+    var sub = e.type==="birthday" ? emo+" Birthday · turning "+e.age : emo+" Anniversary · "+e.years+" year"+(e.years!==1?"s":"");
+    if (e.relationship) sub += " · " + e.relationship;
+    var bc = e.days===0 ? "today" : e.days<=7 ? "soon" : "normal";
+    var bt = e.days===0 ? "🎉 Today!" : "in "+e.days+" day"+(e.days!==1?"s":"");
+    return '<div class="card '+(e.days===0?"today":e.days<=7?"soon":"")+'">' +
+      '<div class="avatar" style="background:'+c+'22;color:'+c+'">'+initials(e.name)+'</div>' +
+      '<div class="card-info"><div class="card-name">'+e.name+'</div><div class="card-sub">'+sub+'</div></div>' +
+      '<span class="badge '+bc+'">'+bt+'</span></div>';
   }
 
-  let html = "";
-  if (groups.today.length) html += `<div class="section-label">🎉 Today</div>` + groups.today.map(makeCard).join("");
-  if (groups.week.length)  html += `<div class="section-label">⚡ This Week</div>` + groups.week.map(makeCard).join("");
-  if (groups.month.length) html += `<div class="section-label">📅 This Month</div>` + groups.month.map(makeCard).join("");
-  if (groups.later.length) html += `<div class="section-label">🗓 Coming Up</div>` + groups.later.map(makeCard).join("");
+  var html = "";
+  if (groups.today.length) html += '<div class="section-lbl">🎉 Today</div>'      + groups.today.map(card).join("");
+  if (groups.week.length)  html += '<div class="section-lbl">⚡ This Week</div>'  + groups.week.map(card).join("");
+  if (groups.month.length) html += '<div class="section-lbl">📅 This Month</div>' + groups.month.map(card).join("");
+  if (groups.later.length) html += '<div class="section-lbl">🗓 Coming Up</div>'  + groups.later.map(card).join("");
+  el.innerHTML = html;
+}
 
-  container.innerHTML = html;
+function changeMonth(dir) {
+  calendarDate.setMonth(calendarDate.getMonth() + dir);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  var year = calendarDate.getFullYear();
+  var month = calendarDate.getMonth();
+  var today = new Date();
+  document.getElementById("cal-title").textContent =
+    calendarDate.toLocaleString("default", { month:"long", year:"numeric" });
+
+  var eventsByDay = {};
+  getEvents().forEach(function(e){
+    var d = new Date(e.type==="birthday" ? e.dob : e.anniversary);
+    if (d.getMonth() === month) {
+      var key = d.getDate();
+      if (!eventsByDay[key]) eventsByDay[key] = [];
+      eventsByDay[key].push(e);
+    }
+  });
+
+  var firstDay = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+  var daysInPrev  = new Date(year, month, 0).getDate();
+  var html = "";
+
+  ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(function(d){
+    html += '<div class="cal-day-name">'+d+'</div>';
+  });
+  for (var i = firstDay-1; i >= 0; i--) {
+    html += '<div class="cal-day other-month"><div class="day-num">'+(daysInPrev-i)+'</div></div>';
+  }
+  for (var d = 1; d <= daysInMonth; d++) {
+    var isToday = (d===today.getDate() && month===today.getMonth() && year===today.getFullYear());
+    var evs = eventsByDay[d] || [];
+    var cls = isToday ? "today-date" : evs.length ? "has-event" : "";
+    var dots = evs.map(function(e){
+      return '<div class="event-dot" style="background:'+(e.type==="birthday"?"#7c3aed":"#db2777")+'"></div>';
+    }).join("");
+    html += '<div class="cal-day '+cls+'"><div class="day-num">'+d+'</div>'+dots+'</div>';
+  }
+  document.getElementById("calendar-grid").innerHTML = '<div class="cal-grid">'+html+'</div>';
+}
+
+function renderReminders() {
+  var events = getEvents().filter(function(e){ return e.days <= 30; });
+  var el = document.getElementById("reminder-list");
+  if (!events.length) { el.innerHTML = '<div class="empty">No events in the next 30 days.</div>'; return; }
+  el.innerHTML = events.map(function(e){
+    var icon = e.type==="birthday" ? "🎂" : "💍";
+    var when = e.days===0 ? "TODAY" : "in "+e.days+" day"+(e.days!==1?"s":"");
+    var msg = "Hey! Just a reminder — "+e.name+"'s "+e.type+" is "+when+"! "+icon+" Let's celebrate! 🎊";
+    return '<div class="reminder-card"><div class="icon">'+icon+'</div>' +
+      '<div class="text"><strong>'+e.name+' — '+when+'</strong><span>'+msg+'</span></div>' +
+      '<button class="copy-btn" onclick="copyMsg(this,\''+msg.replace(/'/g,"\\'")+'\')">' +
+      'Copy message</button></div>';
+  }).join("");
+}
+
+function copyMsg(btn, text) {
+  navigator.clipboard.writeText(text).then(function(){
+    btn.textContent = "✓ Copied!";
+    setTimeout(function(){ btn.textContent = "Copy message"; }, 2000);
+  });
+}
+
+function showTab(name, clickedBtn) {
+  document.querySelectorAll(".tab-content").forEach(function(t){ t.classList.remove("active"); });
+  document.querySelectorAll(".tab").forEach(function(b){ b.classList.remove("active"); });
+  document.getElementById("tab-"+name).classList.add("active");
+  if (clickedBtn) clickedBtn.classList.add("active");
+  if (name==="calendar")  renderCalendar();
+  if (name==="reminders") renderReminders();
 }
 
 function renderAll() {
   renderStats();
-  renderCards();
+  renderDashboard();
 }
 
-function setFilter(filter, btn) {
-  activeFilter = filter;
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderCards();
-}
-
-// ── Start the app ──
-document.getElementById("cards-container").innerHTML = `<div class="loading">Loading your tracker... 🎂</div>`;
-fetchData();
-
-// Auto-refresh every minute
-setInterval(fetchData, REFRESH_INTERVAL);
+fetchFromSheet();
+setInterval(fetchFromSheet, REFRESH_EVERY);
