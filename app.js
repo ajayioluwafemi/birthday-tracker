@@ -22,11 +22,12 @@ function fetchFromSheet() {
         var firstName = row["First Name"] || "";
         var lastName  = row["Last Name"]  || "";
         var name      = (firstName + " " + lastName).trim();
-        var dob       = row["DOB"] || "";
-        var anniv     = row["Anniversary"] || "";
-        var phone     = row["Phone Number (Include Country Code)"] || "";
-        var gender    = row["Gender"] || "";
+	var gender    = row["Gender"] || "";
+	var phone     = row["Phone Number (Include Country Code)"] || "";
         var location  = row["Location"] || "";
+	var dob       = row["DOB"] || "";
+        var anniv     = row["Anniversary (Wedding, etc)"] || "";
+        
 
         if (!name.trim()) return;
 
