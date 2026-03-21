@@ -1,4 +1,4 @@
-var API_URL = "https://script.google.com/macros/s/AKfycbx4hMRRKoybFc5jVXoKENX0lwph1Yyj98m27wFmUk-LnnH0EENTxyECB25gFxTR-iBqcA/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbxf6h9JXn0yQlCQyWtbC_Asb7u5S1a799jniTX-n01-XuVn4dms5gE6J8vbePTQjE-jZQ/exec";
 
 var REFRESH_EVERY = 60000;
 var allPeople = [];
