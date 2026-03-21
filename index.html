@@ -10,27 +10,82 @@
 
   <header>
     <h1>🎂 Birthday & Anniversary Tracker</h1>
-    <p>Powered by your Google Form responses</p>
+    <p id="last-updated">Loading...</p>
   </header>
 
   <main>
-    <!-- Stats row -->
-    <div class="stats" id="stats"></div>
-
-    <!-- Filter buttons -->
-    <div class="filters">
-      <input type="text" id="search" placeholder="🔍 Search name..." oninput="renderCards()" />
-      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-      <button class="filter-btn" onclick="setFilter('birthday', this)">🎂 Birthdays</button>
-      <button class="filter-btn" onclick="setFilter('anniversary', this)">💍 Anniversaries</button>
-      <button class="filter-btn" onclick="setFilter('soon', this)">⚡ This Month</button>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('dashboard', this)">📅 Upcoming</button>
+      <button class="tab" onclick="showTab('calendar', this)">📆 Calendar</button>
+      <button class="tab" onclick="showTab('add', this)">➕ Add Person</button>
+      <button class="tab" onclick="showTab('reminders', this)">🔔 Reminders</button>
     </div>
 
-    <!-- Cards -->
-    <div id="cards-container"></div>
+    <div class="stats" id="stats"></div>
 
-    <!-- Last updated -->
-    <p class="last-updated" id="last-updated"></p>
+    <div id="tab-dashboard" class="tab-content active">
+      <div class="filters">
+        <input type="text" id="search" placeholder="🔍 Search name..." oninput="renderDashboard()" />
+        <button class="filter active" onclick="setFilter('all',this)">All</button>
+        <button class="filter" onclick="setFilter('birthday',this)">🎂 Birthdays</button>
+        <button class="filter" onclick="setFilter('anniversary',this)">💍 Anniversaries</button>
+        <button class="filter" onclick="setFilter('month',this)">⚡ This Month</button>
+      </div>
+      <div id="event-list"></div>
+    </div>
+
+    <div id="tab-calendar" class="tab-content">
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">&#8592;</button>
+        <span id="cal-title"></span>
+        <button onclick="changeMonth(1)">&#8594;</button>
+      </div>
+      <div id="calendar-grid"></div>
+    </div>
+
+    <div id="tab-add" class="tab-content">
+      <div class="add-form">
+        <h2>Add someone manually</h2>
+        <p class="form-note">For people who haven't filled in your Google Form yet.</p>
+        <div class="form-grid">
+          <label>First Name *
+            <input type="text" id="add-firstname" placeholder="e.g. Jane" />
+          </label>
+          <label>Last Name *
+            <input type="text" id="add-lastname" placeholder="e.g. Smith" />
+          </label>
+          <label>Gender
+            <select id="add-gender">
+              <option value="">Select...</option>
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+          </label>
+          <label>Location
+            <input type="text" id="add-location" placeholder="e.g. London" />
+          </label>
+          <label>Phone Number (Include Country Code)
+            <input type="tel" id="add-phone" placeholder="e.g. +44 7000 000000" />
+          </label>
+          <label>DOB (Day & Month)
+            <input type="date" id="add-dob" />
+          </label>
+          <label>Anniversary (Day & Month)
+            <input type="date" id="add-anniversary" />
+          </label>
+        </div>
+        <button class="btn-primary" onclick="addPerson()">Add Person</button>
+      </div>
+    </div>
+
+    <div id="tab-reminders" class="tab-content">
+      <div class="reminder-intro">
+        <h2>🔔 Upcoming Reminders</h2>
+        <p>Events in the next 30 days. Click "Copy message" to send via WhatsApp or email.</p>
+      </div>
+      <div id="reminder-list"></div>
+    </div>
+
   </main>
 
   <script src="app.js"></script>
