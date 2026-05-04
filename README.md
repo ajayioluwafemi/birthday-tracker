@@ -1,9 +1,11 @@
-# 🎂 #YouthAblazeFamily Birthday & Anniversary Tracker
-
+# #YAFamily Events, Birthday & Anniversary Tracker
 A free, fully automated web app and email reminder system for tracking birthdays, anniversaries, and meetings powered by Google Forms, Google Sheets, and Google Apps Script.
 
 > **Live Dashboard:** [ajayioluwafemi.github.io/birthday-tracker](https://ajayioluwafemi.github.io/birthday-tracker)
 
+![GitHub stars](https://img.shields.io/github/stars/ajayioluwafemi/birthday-tracker?style=flat-square)
+![License](https://img.shields.io/github/license/ajayioluwafemi/birthday-tracker?style=flat-square)
+![Top Language](https://img.shields.io/github/languages/top/ajayioluwafemi/birthday-tracker?style=flat-square)
 ---
 
 ## ✨ Features
@@ -17,10 +19,10 @@ A free, fully automated web app and email reminder system for tracking birthdays
 - 🔍 **Search & filter** by name, type, or month
 
 ### 📧 Automated Email System
-- 🎂 **Beautiful celebration emails** sent automatically to celebrants from `#YouthAblazeFamily` on their birthday/anniversary
+- 🎂 **Beautiful celebration emails** sent automatically to celebrants from `#YAFamily` on their birthday/anniversary
 - 📋 **Daily exco summary** with today's events and 7-day outlook
 - 📅 **Meeting reminders** sent at 3 stages: day before, morning of, and 30 minutes before
-- 👥 **Smart audience targeting** — general meetings reach all members, exco meetings only `#YouthAblazeExco`
+- 👥 **Smart audience targeting** — general meetings reach all members, exco meetings only `#YAExco`
 
 ---
 
@@ -62,9 +64,9 @@ Google Form  →  Google Sheet  →  Apps Script  →  Dashboard + Auto Emails
 | Week | Day | Meeting Type | Audience |
 |---|---|---|---|
 | Week 1 | 1st Wednesday | General Meeting | All members + execs |
-| Week 2 | 2nd Wednesday | `#YouthAblazeExco` Meeting | Execs only |
+| Week 2 | 2nd Wednesday | `#YAExco` Meeting | Execs only |
 | Week 3 | 3rd Wednesday | General Meeting | All members + execs |
-| Week 4 | 4th Wednesday | `#YouthAblazeExco` Meeting | Execs only |
+| Week 4 | 4th Wednesday | `#YAExco` Meeting | Execs only |
 
 ### Meeting Reminder Schedule
 For each meeting day, three automated reminders go out:
@@ -83,15 +85,13 @@ For each meeting day, three automated reminders go out:
 - Link it to a Google Sheet via **Responses tab → Sheets icon**
 
 ### Step 2 — Set Up Apps Script
-- In your Google Sheet go to **Extensions → Apps Script**
-- Paste the full automation script
-- Update these settings at the top of the script:
-  ```javascript
-  var EXEC_EMAILS = "exec1@email.com, exec2@email.com, exec3@email.com";
-  var GROUP_NAME = "#YouthAblazeFamily";
-  var EXCO_NAME = "#YouthAblazeExco";
-  var MEETING_TIME = "8:00 PM WAT";
-  var DASHBOARD_URL = "https://ajayioluwafemi.github.io/birthday-tracker";
+*   In your Google Sheet go to **Extensions → Apps Script**[cite: 1]
+*   Paste the full automation script
+var EXEC_EMAILS = "exec1@email.com, exec2@email.com, exec3@email.com";
+var GROUP_NAME = "#YAF";
+var EXCO_NAME = "#YAExco";
+var MEETING_TIME = "8:00 PM WAT";
+var DASHBOARD_URL = "[https://ajayioluwafemi.github.io/birthday-tracker](https://ajayioluwafemi.github.io/birthday-tracker)";
   ```
 - Set Google Sheet timezone: **File → Settings → Timezone → (GMT+01:00) Africa/Lagos**
 
@@ -204,9 +204,9 @@ This is intentionally manual because WhatsApp blocks automated group posts (anti
 
 ## 📜 Licence
 
-Built with ❤️ for `#YouthAblazeFamily` using vanilla HTML, CSS, and JavaScript — no frameworks, no costs, no third-party services. Free to use, modify, and adapt for your own group.
+Built with ❤️ for `#YAFamily` using vanilla HTML, CSS, and JavaScript — no frameworks, no costs, no third-party services. Free to use, modify, and adapt for your own group.
 
 ---
 
 > **Built and maintained by:** Ajayi Oluwafemi
-> **Group:** #YouthAblazeFamily · #YouthAblazeExco
+> **Group:** #YAFamily · #YAExco
