@@ -162,7 +162,7 @@ Wednesday 7:30pm  →  📧 "Starting in 30 minutes" sent to all members
 Wednesday 8pm     →  🎉 Meeting starts!
 ```
 
-If anyone has a birthday or anniversary that day, they also receive a separate beautiful celebration email from `#YouthAblazeFamily` at 7am.
+If anyone has a birthday or anniversary that day, they also receive a separate beautiful celebration email from `#YAFamily` at 7am.
 
 ---
 
